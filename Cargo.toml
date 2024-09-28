@@ -1,0 +1,8 @@
+[package]
+name = "dumbo"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+chrono = "0.4.38"
+sys-info = "0.9.1"
