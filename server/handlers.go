@@ -83,6 +83,8 @@ func collectHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	slog.With("host", payload.Hostname).Info("Collecting data")
+
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte("Collected"))
 }
