@@ -1,0 +1,6 @@
+[ server ]
+url = "https://dumbo.local"
+token = "67GahfZLifyO3nUKZyTSknij"
+
+[ collect ]
+cycle = 60 # How often collect data in seconds
