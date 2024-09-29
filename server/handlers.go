@@ -46,7 +46,8 @@ func collectHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if tmpPayload.Hostname == nil ||
+	if tmpPayload.Host.Hostname == nil ||
+		tmpPayload.Host.CPUs == nil ||
 		tmpPayload.Load.Date == nil ||
 		tmpPayload.Load.One == nil ||
 		tmpPayload.Load.Five == nil ||
@@ -60,7 +61,7 @@ func collectHandler(w http.ResponseWriter, r *http.Request) {
 	// Round time to seconds
 	payload.Load.Date = payload.Load.Date.Round(time.Second)
 
-	hostID, err := db.GetHostIDByHostname(payload.Hostname)
+	hostID, err := db.GetHostIDByHostname(payload.Host.Hostname)
 	if err != nil {
 		if !errors.Is(err, db.ErrNotExists) {
 			slog.With("err", err).Error("Can't get hostID by hostname from DB")
@@ -68,9 +69,9 @@ func collectHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		hostID, err = db.InsertHost(payload.Hostname)
+		hostID, err = db.InsertHost(payload.Host)
 		if err != nil {
-			slog.With("err", err, "hostname", payload.Hostname).Error("Can't insert host in DB")
+			slog.With("err", err, "hostname", payload.Host.Hostname).Error("Can't insert host in DB")
 			http.Error(w, "", http.StatusInternalServerError)
 			return
 		}
@@ -83,7 +84,7 @@ func collectHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	slog.With("host", payload.Hostname).Info("Collecting data")
+	slog.With("host", payload.Host.Hostname).Info("Collecting data")
 
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte("Collected"))

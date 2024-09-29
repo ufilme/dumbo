@@ -36,7 +36,8 @@ func migrate() error {
 	query := `
   CREATE TABLE IF NOT EXISTS hosts(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    hostname TEXT
+    hostname TEXT,
+    cpus INTEGER
   );
   CREATE TABLE IF NOT EXISTS load(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -56,8 +57,8 @@ func migrate() error {
 	return nil
 }
 
-func InsertHost(hostname string) (int64, error) {
-	r, err := global_db.Exec("INSERT INTO hosts(hostname) values(?)", hostname)
+func InsertHost(host types.Host) (int64, error) {
+	r, err := global_db.Exec("INSERT INTO hosts(hostname, cpus) values(?, ?)", host.Hostname, host.CPUs)
 	if err != nil {
 		return 0, err
 	}
@@ -83,8 +84,8 @@ func GetHostIDByHostname(hostname string) (int64, error) {
 	r := global_db.QueryRow("SELECT * FROM hosts WHERE hostname = ?", hostname)
 
 	var id int64
-	var hs string
-	err := r.Scan(&id, &hs)
+	var h types.Host
+	err := r.Scan(&id, &h.Hostname, &h.CPUs)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return 0, ErrNotExists
@@ -97,7 +98,7 @@ func GetHostIDByHostname(hostname string) (int64, error) {
 }
 
 func GetAllLoads() ([]types.CollectPayload, error) {
-	rows, err := global_db.Query("SELECT load.time, load.one, load.five, load.fifteen, hosts.hostname FROM load INNER JOIN hosts ON load.hostID=hosts.id")
+	rows, err := global_db.Query("SELECT load.time, load.one, load.five, load.fifteen, hosts.hostname, hosts.cpus FROM load INNER JOIN hosts ON load.hostID=hosts.id")
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +108,7 @@ func GetAllLoads() ([]types.CollectPayload, error) {
 	for rows.Next() {
 		var tmp types.CollectPayload
 		var tmp2 int64
-		err := rows.Scan(&tmp2, &tmp.Load.One, &tmp.Load.Five, &tmp.Load.Fifteen, &tmp.Hostname)
+		err := rows.Scan(&tmp2, &tmp.Load.One, &tmp.Load.Five, &tmp.Load.Fifteen, &tmp.Host.Hostname, &tmp.Host.CPUs)
 		tmp.Load.Date = time.Unix(tmp2, 0)
 
 		if err != nil {

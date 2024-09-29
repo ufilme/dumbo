@@ -2,6 +2,11 @@ package types
 
 import "time"
 
+type HostPTR struct {
+	Hostname *string
+	CPUs     *uint
+}
+
 type LoadAvgPTR struct {
 	Date    *time.Time
 	One     *float64
@@ -10,8 +15,13 @@ type LoadAvgPTR struct {
 }
 
 type CollectPayloadPTR struct {
-	Hostname *string
-	Load     LoadAvgPTR
+	Host HostPTR
+	Load LoadAvgPTR
+}
+
+type Host struct {
+	Hostname string
+	CPUs     uint
 }
 
 type LoadAvg struct {
@@ -22,13 +32,16 @@ type LoadAvg struct {
 }
 
 type CollectPayload struct {
-	Hostname string
-	Load     LoadAvg
+	Host Host
+	Load LoadAvg
 }
 
 func (p CollectPayloadPTR) Deref() CollectPayload {
 	return CollectPayload{
-		Hostname: *p.Hostname,
+		Host: Host{
+			Hostname: *p.Host.Hostname,
+			CPUs:     *p.Host.CPUs,
+		},
 		Load: LoadAvg{
 			Date:    *p.Load.Date,
 			One:     *p.Load.One,

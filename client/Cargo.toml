@@ -7,6 +7,7 @@ edition = "2021"
 chrono = "0.4.38"
 gethostname = "0.5.0"
 minreq = { version = "2.12.0", features = ["https"] }
+num_cpus = "1.16.0"
 serde = { version = "1.0.210", features = ["derive"] }
 serde_json = "1.0.128"
 sys-info = "0.9.1"

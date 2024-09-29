@@ -32,8 +32,14 @@ struct Load {
 }
 
 #[derive(Serialize)]
-struct Payload<'a> {
+struct Host<'a> {
     hostname: &'a str,
+    cpus: usize,
+}
+
+#[derive(Serialize)]
+struct Payload<'a> {
+    host: Host<'a>,
     load: Load,
 }
 
@@ -54,19 +60,30 @@ fn main() {
         .expect("Could not convert hostname to string");
 
     let full_url = config.server.url + COLLECT_ENDPOINT;
+    let host = Host {
+        hostname,
+        cpus: num_cpus::get(),
+    };
+
+    let mut body = Payload {
+        host,
+        load: Load {
+            date: String::new(),
+            one: 0.0,
+            five: 0.0,
+            fifteen: 0.0,
+        },
+    };
 
     loop {
         let l = sys_info::loadavg().unwrap();
         let date = chrono::offset::Utc::now();
 
-        let body = Payload {
-            hostname,
-            load: Load {
-                date: date.to_rfc3339(),
-                one: l.one,
-                five: l.five,
-                fifteen: l.fifteen,
-            },
+        body.load = Load {
+            date: date.to_rfc3339(),
+            one: l.one,
+            five: l.five,
+            fifteen: l.fifteen,
         };
 
         let body = match serde_json::to_string(&body) {
