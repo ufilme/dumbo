@@ -1,4 +1,5 @@
 use core::time;
+use gethostname::gethostname;
 use serde::{Deserialize, Serialize};
 use std::{env, fs, path::Path, process};
 use sys_info;
@@ -38,8 +39,8 @@ struct Payload<'a> {
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    if args.len() < 3 {
-        eprintln!("Confi path not specified or hostname");
+    if args.len() < 2 {
+        eprintln!("Confi path not specified");
         process::exit(1)
     }
 
@@ -47,7 +48,10 @@ fn main() {
     let config = fs::read_to_string(config_path).expect("Config not found");
     let config: Config = toml::from_str(&config).unwrap();
 
-    let hostname = &args[2];
+    let hostname = gethostname();
+    let hostname = hostname
+        .to_str()
+        .expect("Could not convert hostname to string");
 
     let full_url = config.server.url + COLLECT_ENDPOINT;
 
