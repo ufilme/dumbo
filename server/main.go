@@ -5,14 +5,20 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/samuelemusiani/dumbo/config"
 	"github.com/samuelemusiani/dumbo/db"
 )
 
-const DB_PATH = "./db.sqlite"
-
 func main() {
+	err := config.ParseConfig("config.toml")
+	if err != nil {
+		slog.With("err", err).Error("Can't parse config")
+		os.Exit(1)
+	}
 
-	err := db.Connect(DB_PATH)
+	conf := config.GetConfig()
+
+	err = db.Connect(conf.Database.Path)
 	if err != nil {
 		slog.With("err", err).Error("Can't connect to db")
 		os.Exit(1)
@@ -21,7 +27,10 @@ func main() {
 	http.HandleFunc("/api/collect", collectHandler)
 	http.HandleFunc("/api/load", loadHandler)
 
-	slog.Info("Listening on port 8080")
-	slog.With("err", http.ListenAndServe(":8080", nil)).Error("Can't listen")
-	os.Exit(1)
+	slog.With("addr", conf.Server.Listen).Info("Listening")
+	err = http.ListenAndServe(conf.Server.Listen, nil)
+	if err != nil {
+		slog.With("err").Error("Can't listen")
+		os.Exit(1)
+	}
 }
