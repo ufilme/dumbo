@@ -1,7 +1,6 @@
 package db
 
 import (
-	"log/slog"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
