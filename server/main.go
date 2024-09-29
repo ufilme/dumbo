@@ -19,6 +19,7 @@ func main() {
 	}
 
 	http.HandleFunc("/api/collect", collectHandler)
+	http.HandleFunc("/api/load", loadHandler)
 
 	slog.Info("Listening on port 8080")
 	slog.With("err", http.ListenAndServe(":8080", nil)).Error("Can't listen")

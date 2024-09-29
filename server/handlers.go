@@ -17,6 +17,7 @@ func collectHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	} else if r.Method != http.MethodPost {
 		http.Error(w, "Only POST is allowed", http.StatusMethodNotAllowed)
+		return
 	}
 
 	body, err := io.ReadAll(r.Body)
@@ -66,11 +67,37 @@ func collectHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = db.InsertLoad(payload.Load, hostID)
 	if err != nil {
-		slog.With("err", err, "load", payload.Load).Error("Can't insert load in DB")
+		slog.With("err", err, "load", payload.Load, "hostID", hostID).Error("Can't insert load in DB")
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte("Collected"))
+}
+
+func loadHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodOptions {
+		w.Header().Set("Allow", "OPTIONS POST")
+		return
+	} else if r.Method != http.MethodGet {
+		http.Error(w, "Only GET is allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	loads, err := db.GetAllLoads()
+	if err != nil {
+		slog.With("err", err).Error("Can't get loads")
+		http.Error(w, "", http.StatusInternalServerError)
+		return
+	}
+
+	b, err := json.Marshal(loads)
+	if err != nil {
+		slog.With("err", err, "loads", loads).Error("Can't marshal loads")
+		http.Error(w, "", http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(b)
 }

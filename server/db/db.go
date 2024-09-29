@@ -55,7 +55,7 @@ func migrate() error {
 }
 
 func InsertHost(hostname string) (int64, error) {
-	r, err := global_db.Exec("INSERT INTO hosts(hostname) vaues(?)", hostname)
+	r, err := global_db.Exec("INSERT INTO hosts(hostname) values(?)", hostname)
 	if err != nil {
 		return 0, err
 	}
@@ -69,7 +69,7 @@ func InsertHost(hostname string) (int64, error) {
 }
 
 func InsertLoad(l types.LoadAvg, hostID int64) error {
-	_, err := global_db.Exec("INSERT INTO load(time, one, five, fifteen, hostID), values(?, ?, ?, ?, ?)", l.Date, l.One, l.Five, l.Fifteen, hostID)
+	_, err := global_db.Exec("INSERT INTO load(time, one, five, fifteen, hostID) values(?, ?, ?, ?, ?)", l.Date, l.One, l.Five, l.Fifteen, hostID)
 	if err != nil {
 		return err
 	}
@@ -92,4 +92,26 @@ func GetHostIDByHostname(hostname string) (int64, error) {
 	}
 
 	return id, nil
+}
+
+func GetAllLoads() ([]types.CollectPayload, error) {
+	rows, err := global_db.Query("SELECT load.time, load.one, load.five, load.fifteen, hosts.hostname FROM load INNER JOIN hosts ON load.hostID=hosts.id")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var c []types.CollectPayload
+	for rows.Next() {
+		var tmp types.CollectPayload
+		err := rows.Scan(&tmp.Load.Date, &tmp.Load.One, &tmp.Load.Five, &tmp.Load.Fifteen, &tmp.Hostname)
+		if err != nil {
+			return nil, err
+		}
+
+		c = append(c, tmp)
+	}
+
+	return c, nil
+
 }
