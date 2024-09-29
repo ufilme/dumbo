@@ -1,6 +1,9 @@
 package db
 
 import (
+	"log/slog"
+	"time"
+
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/samuelemusiani/dumbo/types"
 
@@ -38,7 +41,7 @@ func migrate() error {
   );
   CREATE TABLE IF NOT EXISTS load(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    time DATETIME,
+    time INTEGER,
     one REAL,
     five REAL,
     fifteen REAL,
@@ -69,7 +72,7 @@ func InsertHost(hostname string) (int64, error) {
 }
 
 func InsertLoad(l types.LoadAvg, hostID int64) error {
-	_, err := global_db.Exec("INSERT INTO load(time, one, five, fifteen, hostID) values(?, ?, ?, ?, ?)", l.Date, l.One, l.Five, l.Fifteen, hostID)
+	_, err := global_db.Exec("INSERT INTO load(time, one, five, fifteen, hostID) values(?, ?, ?, ?, ?)", l.Date.Unix(), l.One, l.Five, l.Fifteen, hostID)
 	if err != nil {
 		return err
 	}
@@ -104,7 +107,10 @@ func GetAllLoads() ([]types.CollectPayload, error) {
 	var c []types.CollectPayload
 	for rows.Next() {
 		var tmp types.CollectPayload
-		err := rows.Scan(&tmp.Load.Date, &tmp.Load.One, &tmp.Load.Five, &tmp.Load.Fifteen, &tmp.Hostname)
+		var tmp2 int64
+		err := rows.Scan(&tmp2, &tmp.Load.One, &tmp.Load.Five, &tmp.Load.Fifteen, &tmp.Hostname)
+		tmp.Load.Date = time.Unix(tmp2, 0)
+
 		if err != nil {
 			return nil, err
 		}

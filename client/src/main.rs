@@ -58,7 +58,7 @@ fn main() {
         let body = Payload {
             hostname,
             load: Load {
-                date: date.to_string(),
+                date: date.to_rfc3339(),
                 one: l.one,
                 five: l.five,
                 fifteen: l.fifteen,

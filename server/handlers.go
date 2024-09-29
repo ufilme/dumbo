@@ -6,6 +6,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/samuelemusiani/dumbo/config"
 	"github.com/samuelemusiani/dumbo/db"
@@ -54,9 +55,10 @@ func collectHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	slog.With("payload", tmpPayload).Info("")
-
 	payload := tmpPayload.Deref()
+
+	// Round time to seconds
+	payload.Load.Date = payload.Load.Date.Round(time.Second)
 
 	hostID, err := db.GetHostIDByHostname(payload.Hostname)
 	if err != nil {

@@ -30,6 +30,7 @@ func (p CollectPayloadPTR) Deref() CollectPayload {
 	return CollectPayload{
 		Hostname: *p.Hostname,
 		Load: LoadAvg{
+			Date:    *p.Load.Date,
 			One:     *p.Load.One,
 			Five:    *p.Load.Five,
 			Fifteen: *p.Load.Fifteen,
