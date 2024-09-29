@@ -13,9 +13,14 @@ type Server struct {
 	Listen string
 }
 
+type Auth struct {
+	Token string
+}
+
 type Config struct {
 	Database Database
 	Server   Server
+	Auth     Auth
 }
 
 var config *Config = nil

@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/samuelemusiani/dumbo/config"
 	"github.com/samuelemusiani/dumbo/db"
 	"github.com/samuelemusiani/dumbo/types"
 )
@@ -17,6 +18,14 @@ func collectHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	} else if r.Method != http.MethodPost {
 		http.Error(w, "Only POST is allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	conf := config.GetConfig()
+
+	token := r.Header.Get("X-API-Token")
+	if token == "" || token != conf.Auth.Token {
+		http.Error(w, "", http.StatusUnauthorized)
 		return
 	}
 
