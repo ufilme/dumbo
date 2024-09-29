@@ -83,8 +83,18 @@ fn main() {
             .with_body(body)
             .send();
 
-        if let Err(e) = res {
-            eprint!("Erro making http request: {e}");
+        match res {
+            Ok(res) => {
+                if res.status_code < 200 || res.status_code >= 300 {
+                    eprint!(
+                        "Status code of the request was {}. Body: {}",
+                        res.status_code,
+                        res.as_str()
+                            .expect("Should be able to convert body of response to str")
+                    );
+                }
+            }
+            Err(e) => eprint!("Error making http request: {e}"),
         }
 
         std::thread::sleep(time::Duration::from_secs(config.collect.cycle));
