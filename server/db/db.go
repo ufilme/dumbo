@@ -1,6 +1,7 @@
 package db
 
 import (
+	"fmt"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -97,8 +98,8 @@ func GetHostIDByHostname(hostname string) (int64, error) {
 	return id, nil
 }
 
-func GetAllLoads() ([]types.CollectPayload, error) {
-	rows, err := global_db.Query("SELECT load.time, load.one, load.five, load.fifteen, hosts.hostname, hosts.cpus FROM load INNER JOIN hosts ON load.hostID=hosts.id")
+func getAllLoads(query string, args ...any) ([]types.CollectPayload, error) {
+	rows, err := global_db.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -122,28 +123,31 @@ func GetAllLoads() ([]types.CollectPayload, error) {
 
 }
 
+func GetAllLoads() ([]types.CollectPayload, error) {
+	return getAllLoads("SELECT load.time, load.one, load.five, load.fifteen, hosts.hostname, hosts.cpus FROM load INNER JOIN hosts ON load.hostID=hosts.id")
+}
+
 func GetAllLoadsOfHost(host string) ([]types.CollectPayload, error) {
-	rows, err := global_db.Query("SELECT load.time, load.one, load.five, load.fifteen, hosts.hostname, hosts.cpus FROM load INNER JOIN hosts ON load.hostID=hosts.id WHERE hosts.hostname=?", host)
+	return getAllLoads("SELECT load.time, load.one, load.five, load.fifteen, hosts.hostname, hosts.cpus FROM load INNER JOIN hosts ON load.hostID=hosts.id WHERE hosts.hostname=?", host)
+}
+
+func GetAllLoadsSinceDate(date string) ([]types.CollectPayload, error) {
+	fmt.Println(date)
+	d, err := time.Parse(time.RFC3339, date)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
-	var c []types.CollectPayload
-	for rows.Next() {
-		var tmp types.CollectPayload
-		var tmp2 int64
-		err := rows.Scan(&tmp2, &tmp.Load.One, &tmp.Load.Five, &tmp.Load.Fifteen, &tmp.Host.Hostname, &tmp.Host.CPUs)
-		tmp.Load.Date = time.Unix(tmp2, 0)
+	return getAllLoads("SELECT load.time, load.one, load.five, load.fifteen, hosts.hostname, hosts.cpus FROM load INNER JOIN hosts ON load.hostID=hosts.id WHERE load.time>=?", d.Unix())
+}
 
-		if err != nil {
-			return nil, err
-		}
+func GetAllLoadsOfHostSinceDate(host, date string) ([]types.CollectPayload, error) {
 
-		c = append(c, tmp)
+	d, err := time.Parse(time.RFC3339, date)
+	if err != nil {
+		return nil, err
 	}
-
-	return c, nil
+	return getAllLoads("SELECT load.time, load.one, load.five, load.fifteen, hosts.hostname, hosts.cpus FROM load INNER JOIN hosts ON load.hostID=hosts.id WHERE hosts.hostname=? AND load.time>=?", host, d.Unix())
 }
 
 func GetAllHosts() ([]types.Host, error) {

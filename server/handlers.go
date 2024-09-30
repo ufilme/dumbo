@@ -102,9 +102,15 @@ func loadHandler(w http.ResponseWriter, r *http.Request) {
 	var loads []types.CollectPayload
 	var err error
 
-	host := r.URL.Query().Get("host")
-	if host != "" {
+	urlValues := r.URL.Query()
+	host := urlValues.Get("host")
+	date := urlValues.Get("since")
+	if host != "" && date == "" {
 		loads, err = db.GetAllLoadsOfHost(host)
+	} else if host == "" && date != "" {
+		loads, err = db.GetAllLoadsSinceDate(date)
+	} else if host != "" && date != "" {
+		loads, err = db.GetAllLoadsOfHostSinceDate(host, date)
 	} else {
 		loads, err = db.GetAllLoads()
 	}
