@@ -122,6 +122,30 @@ func GetAllLoads() ([]types.CollectPayload, error) {
 
 }
 
+func GetAllLoadsOfHost(host string) ([]types.CollectPayload, error) {
+	rows, err := global_db.Query("SELECT load.time, load.one, load.five, load.fifteen, hosts.hostname, hosts.cpus FROM load INNER JOIN hosts ON load.hostID=hosts.id WHERE hosts.hostname=?", host)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var c []types.CollectPayload
+	for rows.Next() {
+		var tmp types.CollectPayload
+		var tmp2 int64
+		err := rows.Scan(&tmp2, &tmp.Load.One, &tmp.Load.Five, &tmp.Load.Fifteen, &tmp.Host.Hostname, &tmp.Host.CPUs)
+		tmp.Load.Date = time.Unix(tmp2, 0)
+
+		if err != nil {
+			return nil, err
+		}
+
+		c = append(c, tmp)
+	}
+
+	return c, nil
+}
+
 func GetAllHosts() ([]types.Host, error) {
 	rows, err := global_db.Query("SELECT * FROM hosts")
 

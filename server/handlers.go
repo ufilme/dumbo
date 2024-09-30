@@ -99,7 +99,16 @@ func loadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loads, err := db.GetAllLoads()
+	var loads []types.CollectPayload
+	var err error
+
+	host := r.URL.Query().Get("host")
+	if host != "" {
+		loads, err = db.GetAllLoadsOfHost(host)
+	} else {
+		loads, err = db.GetAllLoads()
+	}
+
 	if err != nil {
 		slog.With("err", err).Error("Can't get loads")
 		http.Error(w, "", http.StatusInternalServerError)
