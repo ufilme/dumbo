@@ -139,3 +139,27 @@ func TestGetAllLoads(t *testing.T) {
 
 	assert.DeepEqual(t, payloads, loads)
 }
+
+func TestGetAllHosts(t *testing.T) {
+	err := setup()
+	assert.NilError(t, err)
+
+	var hosts []types.Host
+	var hostsIDs []int64
+
+	for range 4 {
+		h := randomHost()
+		id, err := InsertHost(h)
+		assert.NilError(t, err)
+		h.ID = id
+
+		hosts = append(hosts, h)
+		hostsIDs = append(hostsIDs, id)
+	}
+
+	hosts2, err := GetAllHosts()
+	assert.NilError(t, err)
+	assert.Equal(t, 4, len(hosts2))
+
+	assert.DeepEqual(t, hosts, hosts2)
+}

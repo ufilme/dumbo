@@ -20,6 +20,7 @@ type CollectPayloadPTR struct {
 }
 
 type Host struct {
+	ID       int64
 	Hostname string
 	CPUs     uint
 }

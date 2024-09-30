@@ -26,6 +26,7 @@ func main() {
 
 	http.HandleFunc("/api/collect", collectHandler)
 	http.HandleFunc("/api/load", loadHandler)
+	http.HandleFunc("/api/hosts", hostsHandler)
 
 	slog.With("addr", conf.Server.Listen).Info("Listening")
 	err = http.ListenAndServe(conf.Server.Listen, nil)

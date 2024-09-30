@@ -121,3 +121,25 @@ func GetAllLoads() ([]types.CollectPayload, error) {
 	return c, nil
 
 }
+
+func GetAllHosts() ([]types.Host, error) {
+	rows, err := global_db.Query("SELECT * FROM hosts")
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var h []types.Host
+	for rows.Next() {
+		var tmp types.Host
+		err := rows.Scan(&tmp.ID, &tmp.Hostname, &tmp.CPUs)
+		if err != nil {
+			return nil, err
+		}
+
+		h = append(h, tmp)
+	}
+
+	return h, nil
+}
