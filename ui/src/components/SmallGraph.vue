@@ -11,39 +11,94 @@ const $props = defineProps({
   host: { type: Object as PropType<Host>, required: true }
 })
 
-const loads = ref<Load[]>([])
+const loads = ref<Payload[]>([])
 
 onMounted(async () => {
-  let today = new Date();
-  today.setMinutes(today.getMinutes() - 10);
+  let today = (Date.now() / 1000);
+  today = Math.floor(today - 10 * 60);
 
   const response = await fetch(
     encodeURI(
-      LOAD_URL + `?since=${today.toISOString()}&host=${$props.host.Hostname}`,
+      LOAD_URL + `?since=${today}&host=${$props.host.Hostname}`,
     ),
   );
   //const res = await fetch(url)
   loads.value = await response.json();
-  console.log(loads.value)
+  //loads.value = values.sort((a, b) => { return new Date(a.Load.Date) - new Date(b.Load.Date) })
 
 })
 
 const chartData = computed(() => {
   return {
-    labels: loads.value.map(x => new Date(x.Date).getMinutes()),
+    labels: loads.value.map(x => new Date().getMinutes() - new Date(x.Load.Date).getMinutes()),
     datasets: [
       {
         label: 'Data One',
-        backgroundColor: '#f87979',
-        data: loads.value.map(x => x.One)
+        lineTension: 0.3,
+        backgroundColor: "rgba(225, 204,230, .3)",
+        borderColor: "rgb(255, 128, 0)",
+        borderDash: [],
+        borderDashOffset: 0.0,
+        pointBorderColor: "rgb(235, 108, 0)",
+        pointBackgroundColor: "rgb(255, 255, 255)",
+        pointBorderWidth: 10,
+        pointHoverRadius: 5,
+        pointHoverBackgroundColor: "rgb(235, 108, 0)",
+        pointHoverBorderColor: "rgba(220, 220, 220,1)",
+        pointHoverBorderWidth: 2,
+        pointRadius: 1,
+        pointHitRadius: 10,
+        data: loads.value.map(x => x.Load.One)
+      },
+      {
+        label: "Five",
+        lineTension: 0.3,
+        backgroundColor: "rgba(225, 204,230, .3)",
+        borderColor: "rgb(51, 153, 255)",
+        borderDash: [],
+        borderDashOffset: 0.0,
+        pointBorderColor: "rgb(31, 123, 235)",
+        pointBackgroundColor: "rgb(255, 255, 255)",
+        pointBorderWidth: 10,
+        pointHoverRadius: 5,
+        pointHoverBackgroundColor: "rgb(0, 0, 0)",
+        pointHoverBorderColor: "rgba(220, 220, 220,1)",
+        pointHoverBorderWidth: 2,
+        pointRadius: 1,
+        pointHitRadius: 10,
+        data: loads.value.flatMap((x) => x.Load.Five),
+      },
+      {
+        label: "Fifteen",
+        lineTension: 0.3,
+        backgroundColor: "rgba(225, 204,230, .3)",
+        borderColor: "rgb(255, 51, 51)",
+        borderDash: [],
+        borderDashOffset: 0.0,
+        pointBorderColor: "rgb(235, 21, 21)",
+        pointBackgroundColor: "rgb(255, 255, 255)",
+        pointBorderWidth: 10,
+        pointHoverRadius: 5,
+        pointHoverBackgroundColor: "rgb(0, 0, 0)",
+        pointHoverBorderColor: "rgba(220, 220, 220,1)",
+        pointHoverBorderWidth: 2,
+        pointRadius: 1,
+        pointHitRadius: 10,
+        data: loads.value.flatMap((x) => x.Load.Fifteen),
       }
     ]
   };
-});</script>
+});
+</script>
 
 <template>
   <div>
-    <Line :data="chartData" :options="{ responsive: true }" />
+    <h1>
+      {{ $props.host.Hostname }}
+    </h1>
+    <div>
+      <Line :data="chartData" :options="{ responsive: true }" />
+    </div>
   </div>
 </template>
 

@@ -10,3 +10,8 @@ interface Load {
   Five: number,
   Fifteen: number,
 }
+
+interface Payload {
+  Host: Host,
+  Load: Load,
+}

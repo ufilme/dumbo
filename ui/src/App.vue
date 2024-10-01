@@ -4,7 +4,7 @@ import { onMounted, ref } from 'vue';
 import { HOSTS_URL } from './consts';
 import SmallGraph from './components//SmallGraph.vue'
 
-const hosts = ref<Host[]>([])
+const hosts = ref<Host[] | null>(null)
 
 onMounted(async () => {
   const response = await fetch(HOSTS_URL)
