@@ -177,3 +177,15 @@ func GetAllHosts() ([]types.Host, error) {
 
 	return h, nil
 }
+
+func GetHostByID(id int64) (types.Host, error) {
+	row := global_db.QueryRow("SELECT * FROM hosts WHERE id = ?", id)
+
+	var h types.Host
+	err := row.Scan(&h.ID, &h.Hostname, &h.CPUs)
+	if err != nil {
+		return types.Host{}, err
+	}
+
+	return h, nil
+}
