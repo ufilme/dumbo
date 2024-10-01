@@ -12,10 +12,11 @@ const $props = defineProps({
 })
 
 const loads = ref<Payload[]>([])
+const minutes = 10
 
 onMounted(async () => {
   let today = (Date.now() / 1000);
-  today = Math.floor(today - 10 * 60);
+  today = Math.floor(today - minutes * 60);
 
   const response = await fetch(
     encodeURI(
@@ -30,7 +31,7 @@ onMounted(async () => {
 
 const chartData = computed(() => {
   return {
-    labels: loads.value.map(x => new Date().getMinutes() - new Date(x.Load.Date).getMinutes()),
+    labels: Array.from(Array(10).keys()).map(x => x + 1).reverse(),
     datasets: [
       {
         label: 'Data One',
