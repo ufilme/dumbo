@@ -1,34 +1,57 @@
 <script setup lang="ts">
-import type { PropType } from 'vue';
-import { defineProps, onMounted, ref, computed } from 'vue';
-import { LOAD_URL } from '@/consts';
+import { useRoute } from 'vue-router';
+import { ref, onMounted, computed, watch } from 'vue'
+import { HOSTS_URL, LOAD_URL } from '@/consts';
+
 import { Line } from 'vue-chartjs'
 import { Chart as ChartJS, Title, Tooltip, Legend, LineElement, CategoryScale, LinearScale, PointElement } from 'chart.js';
-
 ChartJS.register(Title, Tooltip, Legend, LineElement, CategoryScale, LinearScale, PointElement);
 
-const $props = defineProps({
-  host: { type: Object as PropType<Host>, required: true }
+const $route = useRoute()
+
+const minutes = ref<number>(10)
+const label = ref<number[]>([])
+
+function computeLabel() {
+  for (let i = 0; i < minutes.value; i++) {
+    label.value.push(i)
+  }
+  label.value.reverse()
+}
+computeLabel()
+
+watch(minutes, () => {
+  fetchLoads()
+
+  label.value = []
+  computeLabel()
 })
 
+const host = ref<Host | undefined>(undefined)
 const loads = ref<Payload[]>([])
-const minutes = 10
 
-onMounted(async () => {
+async function fetchLoads() {
   let today = (Date.now() / 1000);
-  today = Math.floor(today - minutes * 60);
+  today = Math.floor(today - minutes.value * 60);
 
   const response = await fetch(
     encodeURI(
-      LOAD_URL + `?since=${today}&host=${$props.host.Hostname}`,
+      LOAD_URL + `?since=${today}&host=${host.value?.Hostname}`,
     ),
   );
   loads.value = await response.json();
+}
+
+onMounted(async () => {
+  const res1 = await fetch(HOSTS_URL + `/${$route.params.id}`)
+  host.value = await res1.json()
+
+  fetchLoads()
 })
 
 const chartData = computed(() => {
   return {
-    labels: Array.from(Array(10).keys()).map(x => x + 1).reverse(),
+    labels: label.value,
     datasets: [
       {
         label: 'Data One',
@@ -92,12 +115,19 @@ const chartData = computed(() => {
 <template>
   <div>
     <h1>
-      {{ $props.host.Hostname }}
+      {{ host?.Hostname }}
     </h1>
+    <div>
+      <select v-model.number="minutes">
+        <option>10</option>
+        <option>30</option>
+        <option>60</option>
+        <option>120</option>
+      </select>
+      {{ minutes }}
+    </div>
     <div>
       <Line :data="chartData" :options="{ responsive: true }" />
     </div>
   </div>
 </template>
-
-<style></style>
