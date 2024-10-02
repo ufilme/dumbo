@@ -14,7 +14,9 @@ onMounted(async () => {
 
 <template>
   <div v-for="h in hosts" :key="h.ID">
-    <SmallGraph :host="h" />
+    <RouterLink :to="`/host/${h.ID}`">
+      <SmallGraph :host="h" />
+    </RouterLink>
   </div>
 </template>
 

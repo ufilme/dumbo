@@ -87,6 +87,7 @@ const chartData = computed(() => {
     ]
   };
 });
+
 </script>
 
 <template>
@@ -95,7 +96,7 @@ const chartData = computed(() => {
       {{ $props.host.Hostname }}
     </h1>
     <div>
-      <Line :data="chartData" :options="{ responsive: true }" />
+      <Line :data="chartData" style="height: 400px; width: 100%;" :options="{ responsive: true }" />
     </div>
   </div>
 </template>
