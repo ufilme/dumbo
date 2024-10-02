@@ -6,6 +6,8 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"os"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -14,6 +16,60 @@ import (
 	"github.com/samuelemusiani/dumbo/db"
 	"github.com/samuelemusiani/dumbo/types"
 )
+
+const UI_DIR = "./dist"
+
+func rootHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodOptions {
+		w.Header().Set("Allow", "OPTIONS GET")
+		return
+	} else if r.Method != http.MethodGet {
+		http.Error(w, "Only GET is allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	b, err := os.ReadFile(path.Join(UI_DIR, "index.html"))
+	if err != nil {
+		slog.With("err", err).Error("Can't get index.html")
+		http.Error(w, "Can't read index.html", http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(b)
+}
+
+func uiHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodOptions {
+		w.Header().Set("Allow", "OPTIONS GET")
+		return
+	} else if r.Method != http.MethodGet {
+		http.Error(w, "Only GET is allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	file := strings.TrimPrefix(r.URL.Path, "/assets/")
+	ext := path.Ext(file)
+
+	var mime string
+
+	switch ext {
+	case ".js":
+		mime = "text/javascript"
+	case ".css":
+		mime = "text/css"
+	}
+
+	path := path.Join(UI_DIR, "assets", file)
+	b, err := os.ReadFile(path)
+	if err != nil {
+		slog.With("err", err, "file", file).Error("Can't get file")
+		http.Error(w, "Can't read file", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", mime)
+	w.Write(b)
+}
 
 func collectHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodOptions {
