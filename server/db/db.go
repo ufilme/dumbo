@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -143,7 +144,12 @@ func GetAllLoadsSinceDate(date string) ([]types.CollectPayload, error) {
 
 func GetAllLoadsOfHostSinceDate(host, date string) ([]types.CollectPayload, error) {
 
-	d, err := time.Parse(time.RFC3339, date)
+	i, err := strconv.ParseInt(date, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	d := time.Unix(i, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -167,6 +173,18 @@ func GetAllHosts() ([]types.Host, error) {
 		}
 
 		h = append(h, tmp)
+	}
+
+	return h, nil
+}
+
+func GetHostByID(id int64) (types.Host, error) {
+	row := global_db.QueryRow("SELECT * FROM hosts WHERE id = ?", id)
+
+	var h types.Host
+	err := row.Scan(&h.ID, &h.Hostname, &h.CPUs)
+	if err != nil {
+		return types.Host{}, err
 	}
 
 	return h, nil

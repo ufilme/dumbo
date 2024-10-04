@@ -6,12 +6,70 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"os"
+	"path"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/samuelemusiani/dumbo/config"
 	"github.com/samuelemusiani/dumbo/db"
 	"github.com/samuelemusiani/dumbo/types"
 )
+
+const UI_DIR = "./dist"
+
+func rootHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodOptions {
+		w.Header().Set("Allow", "OPTIONS GET")
+		return
+	} else if r.Method != http.MethodGet {
+		http.Error(w, "Only GET is allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	b, err := os.ReadFile(path.Join(UI_DIR, "index.html"))
+	if err != nil {
+		slog.With("err", err).Error("Can't get index.html")
+		http.Error(w, "Can't read index.html", http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(b)
+}
+
+func uiHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodOptions {
+		w.Header().Set("Allow", "OPTIONS GET")
+		return
+	} else if r.Method != http.MethodGet {
+		http.Error(w, "Only GET is allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	file := strings.TrimPrefix(r.URL.Path, "/assets/")
+	ext := path.Ext(file)
+
+	var mime string
+
+	switch ext {
+	case ".js":
+		mime = "text/javascript"
+	case ".css":
+		mime = "text/css"
+	}
+
+	path := path.Join(UI_DIR, "assets", file)
+	b, err := os.ReadFile(path)
+	if err != nil {
+		slog.With("err", err, "file", file).Error("Can't get file")
+		http.Error(w, "Can't read file", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", mime)
+	w.Write(b)
+}
 
 func collectHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodOptions {
@@ -144,6 +202,42 @@ func hostsHandler(w http.ResponseWriter, r *http.Request) {
 	hosts, err := db.GetAllHosts()
 	if err != nil {
 		slog.With("err", err).Error("Can't get hosts")
+		http.Error(w, "", http.StatusInternalServerError)
+		return
+	}
+
+	b, err := json.Marshal(hosts)
+	if err != nil {
+		slog.With("err", err, "loads", hosts).Error("Can't marshal hosts")
+		http.Error(w, "", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(b)
+
+}
+
+func singleHostHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodOptions {
+		w.Header().Set("Allow", "OPTIONS GET")
+		return
+	} else if r.Method != http.MethodGet {
+		http.Error(w, "Only GET is allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	tmp := strings.TrimPrefix(r.URL.Path, "/api/hosts/")
+	id, err := strconv.ParseInt(tmp, 10, 64)
+	if err != nil {
+		slog.With("err", err).Error("ID not valid")
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
+	hosts, err := db.GetHostByID(id)
+	if err != nil {
+		slog.With("err", err, "id", id).Error("Can't get host")
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
