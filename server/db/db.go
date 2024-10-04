@@ -134,11 +134,12 @@ func GetAllLoadsOfHost(host string) ([]types.CollectPayload, error) {
 
 func GetAllLoadsSinceDate(date string) ([]types.CollectPayload, error) {
 	fmt.Println(date)
-	d, err := time.Parse(time.RFC3339, date)
+	i, err := strconv.ParseInt(date, 10, 64)
 	if err != nil {
 		return nil, err
 	}
 
+	d := time.Unix(i, 0)
 	return getAllLoads("SELECT load.time, load.one, load.five, load.fifteen, hosts.hostname, hosts.cpus FROM load INNER JOIN hosts ON load.hostID=hosts.id WHERE load.time>=?", d.Unix())
 }
 
@@ -150,9 +151,6 @@ func GetAllLoadsOfHostSinceDate(host, date string) ([]types.CollectPayload, erro
 	}
 
 	d := time.Unix(i, 0)
-	if err != nil {
-		return nil, err
-	}
 	return getAllLoads("SELECT load.time, load.one, load.five, load.fifteen, hosts.hostname, hosts.cpus FROM load INNER JOIN hosts ON load.hostID=hosts.id WHERE hosts.hostname=? AND load.time>=?", host, d.Unix())
 }
 
