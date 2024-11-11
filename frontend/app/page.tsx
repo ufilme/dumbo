@@ -15,8 +15,15 @@ async function getData() {
   return data
 }
 
-async function getAllData(machine: Machine) : Promise<MachineData> {
+async function getAllData(machine: Machine): Promise<MachineData> {
   const data = await getMachineData(machine.Hostname)
+  if (data === null) {
+    return {
+      ...machine,
+      data: [] as any,
+      isDown: true
+    }
+  }
   const oneMinuteAgo = new Date(Date.now() - 90000);
   const isDown = new Date(data[data.length - 1].Load.Date) <= oneMinuteAgo;
   return {
