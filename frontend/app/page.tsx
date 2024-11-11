@@ -20,7 +20,7 @@ async function getAllData(machine: Machine): Promise<MachineData> {
   if (data === null) {
     return {
       ...machine,
-      data: [] as any,
+      data: [{ Load: { Date: new Date().toISOString(), One: 0, Five: 0, Fifteen: 0 } }],
       isDown: true
     }
   }
