@@ -179,6 +179,10 @@ func loadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if loads == nil {
+		loads = make([]types.CollectPayload, 0)
+	}
+
 	b, err := json.Marshal(loads)
 	if err != nil {
 		slog.With("err", err, "loads", loads).Error("Can't marshal loads")
