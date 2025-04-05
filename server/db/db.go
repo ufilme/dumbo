@@ -39,7 +39,9 @@ func migrate() error {
   CREATE TABLE IF NOT EXISTS hosts(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     hostname TEXT,
-    cpus INTEGER
+    cpus INTEGER,
+		ram INTEGER,
+		uptime INTEGER
   );
   CREATE TABLE IF NOT EXISTS load(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -47,6 +49,8 @@ func migrate() error {
     one REAL,
     five REAL,
     fifteen REAL,
+		ramUsed INTEGER,
+		connectedUsers INTEGER,
     hostID INTEGER,
     FOREIGN KEY(hostID) REFERENCES hosts(id)
   );`
@@ -60,7 +64,7 @@ func migrate() error {
 }
 
 func InsertHost(host types.Host) (int64, error) {
-	r, err := global_db.Exec("INSERT INTO hosts(hostname, cpus) values(?, ?)", host.Hostname, host.CPUs)
+	r, err := global_db.Exec("INSERT INTO hosts(hostname, cpus, ram, uptime) values(?, ?, ?, ?)", host.Hostname, host.CPUs, host.RAM, host.Uptime)
 	if err != nil {
 		return 0, err
 	}
@@ -74,7 +78,9 @@ func InsertHost(host types.Host) (int64, error) {
 }
 
 func InsertLoad(l types.LoadAvg, hostID int64) error {
-	_, err := global_db.Exec("INSERT INTO load(time, one, five, fifteen, hostID) values(?, ?, ?, ?, ?)", l.Date.Unix(), l.One, l.Five, l.Fifteen, hostID)
+	_, err := global_db.Exec(
+		"INSERT INTO load(time, one, five, fifteen, ramUsed, connectedUsers, hostID) values(?, ?, ?, ?, ?, ?, ?)",
+		l.Date.Unix(), l.One, l.Five, l.Fifteen, l.RamUsed, l.ConnectedUsers, hostID)
 	if err != nil {
 		return err
 	}
@@ -87,7 +93,7 @@ func GetHostIDByHostname(hostname string) (int64, error) {
 
 	var id int64
 	var h types.Host
-	err := r.Scan(&id, &h.Hostname, &h.CPUs)
+	err := r.Scan(&id, &h.Hostname, &h.CPUs, &h.RAM, &h.Uptime)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return 0, ErrNotExists
@@ -110,7 +116,7 @@ func getAllLoads(query string, args ...any) ([]types.CollectPayload, error) {
 	for rows.Next() {
 		var tmp types.CollectPayload
 		var tmp2 int64
-		err := rows.Scan(&tmp2, &tmp.Load.One, &tmp.Load.Five, &tmp.Load.Fifteen, &tmp.Host.Hostname, &tmp.Host.CPUs)
+		err := rows.Scan(&tmp2, &tmp.Load.One, &tmp.Load.Five, &tmp.Load.Fifteen, &tmp.Load.RamUsed, &tmp.Load.ConnectedUsers, &tmp.Host.Hostname, &tmp.Host.CPUs, &tmp.Host.RAM, &tmp.Host.Uptime)
 		tmp.Load.Date = time.Unix(tmp2, 0)
 
 		if err != nil {
@@ -125,11 +131,11 @@ func getAllLoads(query string, args ...any) ([]types.CollectPayload, error) {
 }
 
 func GetAllLoads() ([]types.CollectPayload, error) {
-	return getAllLoads("SELECT load.time, load.one, load.five, load.fifteen, hosts.hostname, hosts.cpus FROM load INNER JOIN hosts ON load.hostID=hosts.id")
+	return getAllLoads("SELECT load.time, load.one, load.five, load.fifteen, load.ramUsed, load.connectedUsers, hosts.hostname, hosts.cpus, hosts.ram, hosts.uptime FROM load INNER JOIN hosts ON load.hostID=hosts.id")
 }
 
 func GetAllLoadsOfHost(host string) ([]types.CollectPayload, error) {
-	return getAllLoads("SELECT load.time, load.one, load.five, load.fifteen, hosts.hostname, hosts.cpus FROM load INNER JOIN hosts ON load.hostID=hosts.id WHERE hosts.hostname=?", host)
+	return getAllLoads("SELECT load.time, load.one, load.five, load.fifteen, load.ramUsed, load.connectedUsers, hosts.hostname, hosts.cpus, hosts.ram, hosts.uptime FROM load INNER JOIN hosts ON load.hostID=hosts.id WHERE hosts.hostname=?", host)
 }
 
 func GetAllLoadsSinceDate(date string) ([]types.CollectPayload, error) {
@@ -140,7 +146,7 @@ func GetAllLoadsSinceDate(date string) ([]types.CollectPayload, error) {
 	}
 
 	d := time.Unix(i, 0)
-	return getAllLoads("SELECT load.time, load.one, load.five, load.fifteen, hosts.hostname, hosts.cpus FROM load INNER JOIN hosts ON load.hostID=hosts.id WHERE load.time>=?", d.Unix())
+	return getAllLoads("SELECT load.time, load.one, load.five, load.fifteen, load.ramUsed, load.connectedUsers, hosts.hostname, hosts.cpus, hosts.ram, hosts.uptime FROM load INNER JOIN hosts ON load.hostID=hosts.id WHERE load.time>=?", d.Unix())
 }
 
 func GetAllLoadsOfHostSinceDate(host, date string) ([]types.CollectPayload, error) {
@@ -151,7 +157,7 @@ func GetAllLoadsOfHostSinceDate(host, date string) ([]types.CollectPayload, erro
 	}
 
 	d := time.Unix(i, 0)
-	return getAllLoads("SELECT load.time, load.one, load.five, load.fifteen, hosts.hostname, hosts.cpus FROM load INNER JOIN hosts ON load.hostID=hosts.id WHERE hosts.hostname=? AND load.time>=?", host, d.Unix())
+	return getAllLoads("SELECT load.time, load.one, load.five, load.fifteen, load.ramUsed, load.connectedUsers, hosts.hostname, hosts.cpus, hosts.ram, hosts.uptime FROM load INNER JOIN hosts ON load.hostID=hosts.id WHERE hosts.hostname=? AND load.time>=?", host, d.Unix())
 }
 
 func GetAllHosts() ([]types.Host, error) {
@@ -165,7 +171,7 @@ func GetAllHosts() ([]types.Host, error) {
 	var h []types.Host
 	for rows.Next() {
 		var tmp types.Host
-		err := rows.Scan(&tmp.ID, &tmp.Hostname, &tmp.CPUs)
+		err := rows.Scan(&tmp.ID, &tmp.Hostname, &tmp.CPUs, &tmp.RAM, &tmp.Uptime)
 		if err != nil {
 			return nil, err
 		}
@@ -180,7 +186,7 @@ func GetHostByID(id int64) (types.Host, error) {
 	row := global_db.QueryRow("SELECT * FROM hosts WHERE id = ?", id)
 
 	var h types.Host
-	err := row.Scan(&h.ID, &h.Hostname, &h.CPUs)
+	err := row.Scan(&h.ID, &h.Hostname, &h.CPUs, &h.RAM, &h.Uptime)
 	if err != nil {
 		return types.Host{}, err
 	}
