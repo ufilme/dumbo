@@ -1,7 +1,12 @@
 use core::time;
 use gethostname::gethostname;
 use serde::{Deserialize, Serialize};
-use std::{env, fs, path::Path, process};
+use std::{
+    collections::HashSet,
+    env, fs,
+    path::Path,
+    process::{self, Command},
+};
 use sys_info;
 
 const COLLECT_ENDPOINT: &str = "/api/collect";
@@ -29,12 +34,16 @@ struct Load {
     one: f64,
     five: f64,
     fifteen: f64,
+    ram_used: u64,
+    connected_users: usize,
 }
 
 #[derive(Serialize)]
 struct Host<'a> {
     hostname: &'a str,
     cpus: usize,
+    ram: u64,
+    uptime: i64,
 }
 
 #[derive(Serialize)]
@@ -46,7 +55,7 @@ struct Payload<'a> {
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
-        eprintln!("Confi path not specified");
+        eprintln!("Config path not specified");
         process::exit(1)
     }
 
@@ -60,9 +69,13 @@ fn main() {
         .expect("Could not convert hostname to string");
 
     let full_url = config.server.url + COLLECT_ENDPOINT;
+    let mem_info = sys_info::mem_info().expect("Can't get memory information");
+
     let host = Host {
         hostname,
         cpus: num_cpus::get(),
+        ram: mem_info.total,
+        uptime: sys_info::boottime().expect("Can't get uptime").tv_sec,
     };
 
     let mut body = Payload {
@@ -72,6 +85,8 @@ fn main() {
             one: 0.0,
             five: 0.0,
             fifteen: 0.0,
+            ram_used: 0,
+            connected_users: 0,
         },
     };
 
@@ -84,6 +99,8 @@ fn main() {
             one: l.one,
             five: l.five,
             fifteen: l.fifteen,
+            ram_used: mem_info.total - mem_info.avail,
+            connected_users: get_connected_users(),
         };
 
         let body = match serde_json::to_string(&body) {
@@ -116,4 +133,24 @@ fn main() {
 
         std::thread::sleep(time::Duration::from_secs(config.collect.cycle));
     }
+}
+
+fn get_connected_users() -> usize {
+    let out = Command::new("who").output();
+    if let Err(err) = out {
+        eprintln!("Error executing 'who' {}", err);
+        return 0;
+    }
+
+    let out = out.unwrap();
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let mut users = HashSet::new();
+
+    for line in stdout.lines() {
+        if let Some(username) = line.split_whitespace().next() {
+            users.insert(username.to_string());
+        }
+    }
+
+    users.len()
 }

@@ -5,13 +5,17 @@ import "time"
 type HostPTR struct {
 	Hostname *string
 	CPUs     *uint
+	RAM      *uint
+	Uptime   *uint
 }
 
 type LoadAvgPTR struct {
-	Date    *time.Time
-	One     *float64
-	Five    *float64
-	Fifteen *float64
+	Date           *time.Time
+	One            *float64
+	Five           *float64
+	Fifteen        *float64
+	RamUsed        *uint64 `json:"ram_used"`
+	ConnectedUsers *uint   `json:"connected_users"`
 }
 
 type CollectPayloadPTR struct {
@@ -23,13 +27,17 @@ type Host struct {
 	ID       int64
 	Hostname string
 	CPUs     uint
+	RAM      uint64
+	Uptime   uint
 }
 
 type LoadAvg struct {
-	Date    time.Time
-	One     float64
-	Five    float64
-	Fifteen float64
+	Date           time.Time
+	One            float64
+	Five           float64
+	Fifteen        float64
+	RamUsed        uint64
+	ConnectedUsers uint
 }
 
 type CollectPayload struct {
@@ -44,10 +52,12 @@ func (p CollectPayloadPTR) Deref() CollectPayload {
 			CPUs:     *p.Host.CPUs,
 		},
 		Load: LoadAvg{
-			Date:    *p.Load.Date,
-			One:     *p.Load.One,
-			Five:    *p.Load.Five,
-			Fifteen: *p.Load.Fifteen,
+			Date:           *p.Load.Date,
+			One:            *p.Load.One,
+			Five:           *p.Load.Five,
+			Fifteen:        *p.Load.Fifteen,
+			RamUsed:        *p.Load.RamUsed,
+			ConnectedUsers: *p.Load.ConnectedUsers,
 		},
 	}
 }

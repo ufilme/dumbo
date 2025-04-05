@@ -106,10 +106,15 @@ func collectHandler(w http.ResponseWriter, r *http.Request) {
 
 	if tmpPayload.Host.Hostname == nil ||
 		tmpPayload.Host.CPUs == nil ||
+		tmpPayload.Host.RAM == nil ||
+		tmpPayload.Host.Uptime == nil ||
 		tmpPayload.Load.Date == nil ||
 		tmpPayload.Load.One == nil ||
 		tmpPayload.Load.Five == nil ||
-		tmpPayload.Load.Fifteen == nil {
+		tmpPayload.Load.Fifteen == nil ||
+		tmpPayload.Load.RamUsed == nil ||
+		tmpPayload.Load.ConnectedUsers == nil {
+		slog.With("body", body).Error("Body is missing some fields")
 		http.Error(w, "Body is missing some fields", http.StatusBadRequest)
 		return
 	}

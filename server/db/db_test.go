@@ -2,6 +2,7 @@ package db
 
 import (
 	"math/rand"
+	"os"
 	"testing"
 	"time"
 
@@ -11,9 +12,10 @@ import (
 )
 
 func setup() error {
+	os.Remove("/tmp/test.db")
 	conf := config.Config{
 		Database: config.Database{
-			Path: ":memory:",
+			Path: "/tmp/test.db",
 		},
 	}
 	return Connect(conf.Database.Path)
@@ -23,15 +25,19 @@ func randomHost() types.Host {
 	return types.Host{
 		Hostname: "randomName",
 		CPUs:     uint(rand.Intn(16)),
+		RAM:      uint64(rand.Intn(64)),
+		Uptime:   uint(rand.Intn(100)),
 	}
 }
 
 func randomLoad() types.LoadAvg {
 	return types.LoadAvg{
-		Date:    time.Now().Round(time.Second),
-		One:     rand.Float64(),
-		Five:    rand.Float64(),
-		Fifteen: rand.Float64(),
+		Date:           time.Now().Round(time.Second),
+		One:            rand.Float64(),
+		Five:           rand.Float64(),
+		Fifteen:        rand.Float64(),
+		RamUsed:        uint64(rand.Intn(64)),
+		ConnectedUsers: uint(rand.Intn(64)),
 	}
 }
 
@@ -47,6 +53,8 @@ func TestInsertHost(t *testing.T) {
 	host := types.Host{
 		Hostname: "foo",
 		CPUs:     4,
+		RAM:      16,
+		Uptime:   100,
 	}
 
 	_, err = InsertHost(host)
@@ -60,6 +68,8 @@ func TestGetHostIDByHostname(t *testing.T) {
 	host := types.Host{
 		Hostname: "perrr",
 		CPUs:     16,
+		RAM:      64,
+		Uptime:   2000,
 	}
 
 	id, err := InsertHost(host)
@@ -77,6 +87,8 @@ func TestInsertLoad(t *testing.T) {
 	host := types.Host{
 		Hostname: "alksdf9",
 		CPUs:     1,
+		RAM:      3,
+		Uptime:   4,
 	}
 
 	id, err := InsertHost(host)
@@ -85,10 +97,12 @@ func TestInsertLoad(t *testing.T) {
 	payload := types.CollectPayload{
 		Host: host,
 		Load: types.LoadAvg{
-			Date:    time.Now().Round(time.Second),
-			One:     rand.Float64(),
-			Five:    rand.Float64(),
-			Fifteen: rand.Float64(),
+			Date:           time.Now().Round(time.Second),
+			One:            rand.Float64(),
+			Five:           rand.Float64(),
+			Fifteen:        rand.Float64(),
+			RamUsed:        uint64(rand.Intn(64)),
+			ConnectedUsers: uint(rand.Intn(64)),
 		},
 	}
 
