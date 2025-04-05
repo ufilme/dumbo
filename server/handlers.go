@@ -114,6 +114,7 @@ func collectHandler(w http.ResponseWriter, r *http.Request) {
 		tmpPayload.Load.Fifteen == nil ||
 		tmpPayload.Load.RamUsed == nil ||
 		tmpPayload.Load.ConnectedUsers == nil {
+		slog.With("body", body).Error("Body is missing some fields")
 		http.Error(w, "Body is missing some fields", http.StatusBadRequest)
 		return
 	}

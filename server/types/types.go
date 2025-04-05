@@ -14,8 +14,8 @@ type LoadAvgPTR struct {
 	One            *float64
 	Five           *float64
 	Fifteen        *float64
-	RamUsed        *uint
-	ConnectedUsers *uint
+	RamUsed        *uint64 `json:"ram_used"`
+	ConnectedUsers *uint   `json:"connected_users"`
 }
 
 type CollectPayloadPTR struct {
@@ -27,7 +27,7 @@ type Host struct {
 	ID       int64
 	Hostname string
 	CPUs     uint
-	RAM      uint
+	RAM      uint64
 	Uptime   uint
 }
 
@@ -36,7 +36,7 @@ type LoadAvg struct {
 	One            float64
 	Five           float64
 	Fifteen        float64
-	RamUsed        uint
+	RamUsed        uint64
 	ConnectedUsers uint
 }
 

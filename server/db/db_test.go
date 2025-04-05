@@ -25,7 +25,7 @@ func randomHost() types.Host {
 	return types.Host{
 		Hostname: "randomName",
 		CPUs:     uint(rand.Intn(16)),
-		RAM:      uint(rand.Intn(64)),
+		RAM:      uint64(rand.Intn(64)),
 		Uptime:   uint(rand.Intn(100)),
 	}
 }
@@ -36,7 +36,7 @@ func randomLoad() types.LoadAvg {
 		One:            rand.Float64(),
 		Five:           rand.Float64(),
 		Fifteen:        rand.Float64(),
-		RamUsed:        uint(rand.Intn(64)),
+		RamUsed:        uint64(rand.Intn(64)),
 		ConnectedUsers: uint(rand.Intn(64)),
 	}
 }
@@ -101,7 +101,7 @@ func TestInsertLoad(t *testing.T) {
 			One:            rand.Float64(),
 			Five:           rand.Float64(),
 			Fifteen:        rand.Float64(),
-			RamUsed:        uint(rand.Intn(64)),
+			RamUsed:        uint64(rand.Intn(64)),
 			ConnectedUsers: uint(rand.Intn(64)),
 		},
 	}
