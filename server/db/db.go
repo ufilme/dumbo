@@ -77,6 +77,15 @@ func InsertHost(host types.Host) (int64, error) {
 	return id, nil
 }
 
+func UpdateHost(host types.Host, id int64) error {
+	_, err := global_db.Exec("UPDATE hosts SET hostname=?, cpus=?, ram=?, uptime=? WHERE id=?", host.Hostname, host.CPUs, host.RAM, host.Uptime, id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func InsertLoad(l types.LoadAvg, hostID int64) error {
 	_, err := global_db.Exec(
 		"INSERT INTO load(time, one, five, fifteen, ramUsed, connectedUsers, hostID) values(?, ?, ?, ?, ?, ?, ?)",

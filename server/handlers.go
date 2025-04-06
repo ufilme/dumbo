@@ -138,6 +138,14 @@ func collectHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "", http.StatusInternalServerError)
 			return
 		}
+	} else {
+		// Update host
+		err = db.UpdateHost(payload.Host, hostID)
+		if err != nil {
+			slog.With("err", err, "hostname", payload.Host.Hostname).Error("Can't update host in DB")
+			http.Error(w, "", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	err = db.InsertLoad(payload.Load, hostID)
