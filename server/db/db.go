@@ -139,7 +139,7 @@ func getAllLoads(query string, args ...any) ([]types.ReturnLoad, error) {
 
 }
 
-const query = "SELECT load.time, load.one, load.five, load.fifteen, load.ramUsed, load.connectedUsers, hosts.ID FROM load INNER JOIN hosts ON load.hostID=hosts.id"
+const query = "SELECT load.time, load.one, load.five, load.fifteen, load.ramUsed, load.connectedUsers, hosts.ID FROM load INNER JOIN hosts ON load.hostID=hosts.id "
 
 func GetAllLoads() ([]types.ReturnLoad, error) {
 	return getAllLoads(query)

@@ -109,11 +109,16 @@ func TestInsertLoad(t *testing.T) {
 	err = InsertLoad(payload.Load, id)
 	assert.NilError(t, err)
 
+	returnLoad := types.ReturnLoad{
+		HostID: id,
+		Load:   payload.Load,
+	}
+
 	loads, err := GetAllLoads()
 	assert.NilError(t, err)
 	assert.Equal(t, 1, len(loads))
 
-	assert.DeepEqual(t, loads[0], payload)
+	assert.DeepEqual(t, loads[0], returnLoad)
 }
 
 func TestGetAllLoads(t *testing.T) {
@@ -133,6 +138,7 @@ func TestGetAllLoads(t *testing.T) {
 	}
 
 	var payloads []types.CollectPayload
+	var returnLoads []types.ReturnLoad
 
 	for range 10 {
 		l := randomLoad()
@@ -145,13 +151,17 @@ func TestGetAllLoads(t *testing.T) {
 		assert.NilError(t, err)
 
 		payloads = append(payloads, p)
+		returnLoads = append(returnLoads, types.ReturnLoad{
+			HostID: hostsIDs[hostN],
+			Load:   p.Load,
+		})
 	}
 
 	loads, err := GetAllLoads()
 	assert.NilError(t, err)
 	assert.Equal(t, 10, len(loads))
 
-	assert.DeepEqual(t, payloads, loads)
+	assert.DeepEqual(t, loads, returnLoads)
 }
 
 func TestGetAllHosts(t *testing.T) {
