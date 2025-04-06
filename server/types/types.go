@@ -5,7 +5,7 @@ import "time"
 type HostPTR struct {
 	Hostname *string
 	CPUs     *uint
-	RAM      *uint
+	RAM      *uint64
 	Uptime   *uint
 }
 
@@ -50,6 +50,8 @@ func (p CollectPayloadPTR) Deref() CollectPayload {
 		Host: Host{
 			Hostname: *p.Host.Hostname,
 			CPUs:     *p.Host.CPUs,
+			RAM:      *p.Host.RAM,
+			Uptime:   *p.Host.Uptime,
 		},
 		Load: LoadAvg{
 			Date:           *p.Load.Date,
