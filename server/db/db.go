@@ -114,18 +114,18 @@ func GetHostIDByHostname(hostname string) (int64, error) {
 	return id, nil
 }
 
-func getAllLoads(query string, args ...any) ([]types.CollectPayload, error) {
+func getAllLoads(query string, args ...any) ([]types.ReturnLoad, error) {
 	rows, err := global_db.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var c []types.CollectPayload
+	var c []types.ReturnLoad
 	for rows.Next() {
-		var tmp types.CollectPayload
+		var tmp types.ReturnLoad
 		var tmp2 int64
-		err := rows.Scan(&tmp2, &tmp.Load.One, &tmp.Load.Five, &tmp.Load.Fifteen, &tmp.Load.RamUsed, &tmp.Load.ConnectedUsers, &tmp.Host.Hostname, &tmp.Host.CPUs, &tmp.Host.RAM, &tmp.Host.Uptime)
+		err := rows.Scan(&tmp2, &tmp.Load.One, &tmp.Load.Five, &tmp.Load.Fifteen, &tmp.Load.RamUsed, &tmp.Load.ConnectedUsers, &tmp.HostID)
 		tmp.Load.Date = time.Unix(tmp2, 0)
 
 		if err != nil {
@@ -139,15 +139,17 @@ func getAllLoads(query string, args ...any) ([]types.CollectPayload, error) {
 
 }
 
-func GetAllLoads() ([]types.CollectPayload, error) {
-	return getAllLoads("SELECT load.time, load.one, load.five, load.fifteen, load.ramUsed, load.connectedUsers, hosts.hostname, hosts.cpus, hosts.ram, hosts.uptime FROM load INNER JOIN hosts ON load.hostID=hosts.id")
+const query = "SELECT load.time, load.one, load.five, load.fifteen, load.ramUsed, load.connectedUsers, hosts.ID FROM load INNER JOIN hosts ON load.hostID=hosts.id"
+
+func GetAllLoads() ([]types.ReturnLoad, error) {
+	return getAllLoads(query)
 }
 
-func GetAllLoadsOfHost(host string) ([]types.CollectPayload, error) {
-	return getAllLoads("SELECT load.time, load.one, load.five, load.fifteen, load.ramUsed, load.connectedUsers, hosts.hostname, hosts.cpus, hosts.ram, hosts.uptime FROM load INNER JOIN hosts ON load.hostID=hosts.id WHERE hosts.hostname=?", host)
+func GetAllLoadsOfHost(host string) ([]types.ReturnLoad, error) {
+	return getAllLoads(query+"WHERE hosts.hostname=?", host)
 }
 
-func GetAllLoadsSinceDate(date string) ([]types.CollectPayload, error) {
+func GetAllLoadsSinceDate(date string) ([]types.ReturnLoad, error) {
 	fmt.Println(date)
 	i, err := strconv.ParseInt(date, 10, 64)
 	if err != nil {
@@ -155,10 +157,10 @@ func GetAllLoadsSinceDate(date string) ([]types.CollectPayload, error) {
 	}
 
 	d := time.Unix(i, 0)
-	return getAllLoads("SELECT load.time, load.one, load.five, load.fifteen, load.ramUsed, load.connectedUsers, hosts.hostname, hosts.cpus, hosts.ram, hosts.uptime FROM load INNER JOIN hosts ON load.hostID=hosts.id WHERE load.time>=?", d.Unix())
+	return getAllLoads(query+"WHERE load.time>=?", d.Unix())
 }
 
-func GetAllLoadsOfHostSinceDate(host, date string) ([]types.CollectPayload, error) {
+func GetAllLoadsOfHostSinceDate(host, date string) ([]types.ReturnLoad, error) {
 
 	i, err := strconv.ParseInt(date, 10, 64)
 	if err != nil {
@@ -166,7 +168,7 @@ func GetAllLoadsOfHostSinceDate(host, date string) ([]types.CollectPayload, erro
 	}
 
 	d := time.Unix(i, 0)
-	return getAllLoads("SELECT load.time, load.one, load.five, load.fifteen, load.ramUsed, load.connectedUsers, hosts.hostname, hosts.cpus, hosts.ram, hosts.uptime FROM load INNER JOIN hosts ON load.hostID=hosts.id WHERE hosts.hostname=? AND load.time>=?", host, d.Unix())
+	return getAllLoads(query+"WHERE hosts.hostname=? AND load.time>=?", host, d.Unix())
 }
 
 func GetAllHosts() ([]types.Host, error) {

@@ -170,7 +170,7 @@ func loadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var loads []types.CollectPayload
+	var loads []types.ReturnLoad
 	var err error
 
 	urlValues := r.URL.Query()
@@ -193,7 +193,7 @@ func loadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if loads == nil {
-		loads = make([]types.CollectPayload, 0)
+		loads = make([]types.ReturnLoad, 0)
 	}
 
 	b, err := json.Marshal(loads)

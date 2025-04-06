@@ -45,6 +45,11 @@ type CollectPayload struct {
 	Load LoadAvg
 }
 
+type ReturnLoad struct {
+	HostID int64
+	Load   LoadAvg
+}
+
 func (p CollectPayloadPTR) Deref() CollectPayload {
 	return CollectPayload{
 		Host: Host{
