@@ -53,7 +53,8 @@ func migrate() error {
 		connectedUsers INTEGER,
     hostID INTEGER,
     FOREIGN KEY(hostID) REFERENCES hosts(id)
-  );`
+  );
+	CREATE INDEX load_time ON load(time);`
 
 	_, err := global_db.Exec(query)
 	if err != nil {
