@@ -1,67 +1,84 @@
-import { useQuery } from "@tanstack/react-query";
-import { makeRequest } from "@/lib/makeRequest";
-import { useDateStore } from "@/store/useDate";
-import { HostInfo, HostLoad } from "@/types/Host.types";
+import { useMemo } from "react";
+import { queryOptions, useQuery } from "@tanstack/react-query";
+import { fetchJson } from "@/lib/api";
+import { Host, HostInfo, HostLoad } from "@/types/Host.types";
 
-export function useHosts(scope: "home" | "info", hostname?: string) {
-  const time = useDateStore((state) => state.currentDate);
-  const hosts = useQuery<HostInfo[]>({
-    queryKey: ["hosts", scope, time],
-    queryFn: async () =>
-      makeRequest({
-        method: "GET",
-        path: "/api/hosts",
-        headers: new Headers({ "Content-Type": "application/json" }),
-        since: Math.floor(time.getTime() / 1000),
-        modifyData: (data: HostInfo[]) => {
-          return data.map((host: HostInfo) => ({
-            ...host,
-          }));
-        },
+// Clients report roughly once a minute: a host is considered down when its
+// last sample is older than this.
+export const DOWN_AFTER_MS = 3 * 60 * 1000;
+
+const HOSTS_REFRESH_MS = 60 * 1000;
+const LOAD_REFRESH_MS = 15 * 1000;
+
+export const hostsQuery = queryOptions({
+  queryKey: ["hosts"],
+  queryFn: () => fetchJson<Host[]>("/api/hosts"),
+  refetchInterval: HOSTS_REFRESH_MS,
+});
+
+// The key stays stable across refetches; `since` is recomputed on each fetch
+// so the window slides forward with time.
+export const loadQuery = (rangeMs: number, hostname?: string) =>
+  queryOptions({
+    queryKey: ["load", hostname ?? null, rangeMs],
+    queryFn: () =>
+      fetchJson<HostLoad[]>("/api/load", {
+        since: Math.floor((Date.now() - rangeMs) / 1000),
+        host: hostname,
       }),
+    refetchInterval: LOAD_REFRESH_MS,
   });
 
-  const load = useQuery<HostLoad[]>({
-    queryKey: ["load", scope, time],
-    queryFn: async () =>
-      makeRequest({
-        method: "GET",
-        path: "/api/load",
-        headers: new Headers({ "Content-Type": "application/json" }),
-        since: Math.floor(time.getTime() / 1000),
-        hostname: hostname,
-      }),
-  });
+export function useHosts({
+  rangeMs,
+  hostname,
+}: {
+  rangeMs: number;
+  hostname?: string;
+}) {
+  const hosts = useQuery(hostsQuery);
+  const load = useQuery(loadQuery(rangeMs, hostname));
 
-  let data: HostInfo[] = [];
-  if (hosts.data && load.data) {
-    const loadMap = load.data.reduce<Record<number, HostLoad[]>>((acc, l) => {
-      if (!acc[l.HostID]) acc[l.HostID] = [];
-      acc[l.HostID].push(l);
-      return acc;
-    }, {});
+  const updatedAt = load.dataUpdatedAt || Date.now();
 
-    data = hosts.data.map((host: HostInfo) => {
-      const loads = (loadMap[host.ID] || [])
-        .slice()
-        .sort((a: HostLoad, b: HostLoad) => {
-          const aDate = a.Load?.Date ? new Date(a.Load.Date).getTime() : 0;
-          const bDate = b.Load?.Date ? new Date(b.Load.Date).getTime() : 0;
-          return aDate - bDate;
-        });
+  const data = useMemo<HostInfo[]>(() => {
+    if (!hosts.data || !load.data) return [];
+
+    const loadMap = new Map<number, HostLoad[]>();
+    for (const l of load.data) {
+      const list = loadMap.get(l.HostID);
+      if (list) list.push(l);
+      else loadMap.set(l.HostID, [l]);
+    }
+
+    return hosts.data.map((host) => {
+      const loads = (loadMap.get(host.ID) ?? []).sort(
+        (a, b) =>
+          new Date(a.Load.Date).getTime() - new Date(b.Load.Date).getTime(),
+      );
+      const last = loads[loads.length - 1]?.Load;
       return {
         ...host,
         Load: loads,
-        IsDown: loads.length === 0,
+        Last: last,
+        IsDown:
+          !last || updatedAt - new Date(last.Date).getTime() > DOWN_AFTER_MS,
       };
     });
-  }
+  }, [hosts.data, load.data, updatedAt]);
 
   return {
     data,
     isLoading: hosts.isLoading || load.isLoading,
-    isError: hosts.isError || load.isError,
+    // Hard failure: nothing to show. A failed refetch keeps the previous
+    // data around and is reported through `isStale` instead.
+    isError: (hosts.isError && !hosts.data) || (load.isError && !load.data),
+    isStale: hosts.isError || load.isError,
     isFetching: hosts.isFetching || load.isFetching,
-    time,
+    // True while showing the previous range's data after the range changed.
+    isPlaceholderData: load.isPlaceholderData,
+    refetch: () => Promise.all([hosts.refetch(), load.refetch()]),
+    updatedAt,
+    since: updatedAt - rangeMs,
   };
 }

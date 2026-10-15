@@ -1,16 +1,8 @@
-import { useEffect, useState } from "react";
 import Clock from "react-clock";
+import { useNow } from "@/hooks/useNow";
 
 export function ClockComponent() {
-  const [datetime, setDatetime] = useState(new Date());
-
-  useEffect(() => {
-    const interval = setInterval(() => setDatetime(new Date()), 1000);
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, []);
+  const now = useNow();
 
   return (
     <Clock
@@ -26,7 +18,7 @@ export function ClockComponent() {
       secondHandLength={75}
       secondHandOppositeLength={25}
       secondHandWidth={3}
-      value={datetime}
+      value={new Date(now)}
     />
   );
 }

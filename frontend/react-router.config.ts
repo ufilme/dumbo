@@ -4,8 +4,4 @@ export default {
   appDirectory: "src",
   ssr: false,
   buildDirectory: "dist",
-  serverBundles: ({ branch }) => {
-    console.log(branch);
-    return [`${branch}/server.js`];
-  },
 } satisfies Config;
