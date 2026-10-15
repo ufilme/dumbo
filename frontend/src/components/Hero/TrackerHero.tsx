@@ -1,51 +1,48 @@
 import { useMemo } from "react";
 import { Tracker } from "@tremor/react";
 import { HostInfo } from "@/types/Host.types";
+import { formatTime } from "@/lib/utils";
 
-const TICK = 90000;
+// Clients report once a minute.
+const SAMPLE_MS = 60 * 1000;
 
+// Splits [since, until] into `buckets` slots and colours each one by how many
+// samples arrived compared to how many were expected.
 export const TrackerHero = ({
   host,
+  since,
+  until,
+  buckets,
   className,
-  interval,
-  showTooltip = false,
 }: {
   host: HostInfo;
-  className: string;
-  interval?: number;
-  showTooltip?: boolean;
+  since: number;
+  until: number;
+  buckets: number;
+  className?: string;
 }) => {
-  const chartdata = useMemo(() => {
-    const arr = [];
-    if (host.Load.length > 0) {
-      for (let pos = 0; pos < host.Load.length - 1; pos++) {
-        const currentDate = new Date(host.Load[pos].Load.Date).getTime();
-        const nextDate = new Date(host.Load[pos + 1].Load.Date).getTime();
-        const isOperational = currentDate + TICK > nextDate;
-
-        const entry = {
-          color: isOperational ? "green" : "red",
-          ...(showTooltip && {
-            tooltip: isOperational ? "Operational" : "Downtime",
-          }),
-        };
-
-        arr.push(entry);
-      }
-    } else {
-      arr.push({
-        color: "red",
-        ...(showTooltip && { tooltip: "No data" }),
-      });
+  const data = useMemo(() => {
+    const width = (until - since) / buckets;
+    const counts = new Array<number>(buckets).fill(0);
+    for (const l of host.Load) {
+      const i = Math.floor((new Date(l.Load.Date).getTime() - since) / width);
+      if (i >= 0 && i < buckets) counts[i]++;
     }
-    return arr;
-  }, [host.Load, showTooltip]);
 
-  return (
-    <div>
-      <Tracker className={className} data={chartdata.slice(interval)} />
-    </div>
-  );
+    const expected = Math.max(1, width / SAMPLE_MS);
+    return counts.map((count, i) => {
+      const start = since + i * width;
+      const range = `${formatTime(start)}–${formatTime(start + width)}`;
+      const coverage = count / expected;
+      if (coverage >= 0.5)
+        return { key: i, color: "green", tooltip: `${range} · Online` };
+      if (count > 0)
+        return { key: i, color: "yellow", tooltip: `${range} · Unstable` };
+      return { key: i, color: "red", tooltip: `${range} · Offline` };
+    });
+  }, [host.Load, since, until, buckets]);
+
+  return <Tracker className={className} data={data} />;
 };
 
 export default TrackerHero;

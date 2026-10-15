@@ -1,9 +1,9 @@
-interface HostLoadData {
+export interface HostLoadData {
   Date: string;
   One: number;
   Five: number;
   Fifteen: number;
-  RamUsed: number;
+  RamUsed: number; // KiB
   ConnectedUsers: number;
 }
 
@@ -12,12 +12,16 @@ export interface HostLoad {
   Load: HostLoadData;
 }
 
-export interface HostInfo {
+export interface Host {
   ID: number;
   Hostname: string;
   CPUs: number;
-  RAM: number;
-  Uptime: number;
+  RAM: number; // KiB
+  Uptime: number; // seconds, as of the last report
+}
+
+export interface HostInfo extends Host {
   Load: HostLoad[];
+  Last?: HostLoadData;
   IsDown: boolean;
 }
