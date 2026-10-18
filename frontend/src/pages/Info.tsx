@@ -69,8 +69,8 @@ export default function Component() {
 
 
   return (
-    <div className="h-screen p-2">
-      <Card className="h-full flex flex-col gap-4">
+    <div className="h-screen p-2 bg-gray-100">
+      <Card className="h-fit flex flex-col gap-4">
         <div className="flex justify-between items-center">
           <ChevronLeftIcon
             className="h-12 cursor-pointer"
@@ -117,7 +117,7 @@ export default function Component() {
           </SegmentedControl.Item>
           <SegmentedControl.Item value="1 day">1 day</SegmentedControl.Item>
         </SegmentedControl.Root>
-        <div className="flex flex-col h-72 align-items-center pb-4">
+        <div className="flex flex-col h-72 align-items-center mb-6 pb-4">
           <AreaChart
             host={host}
             showTooltip={true}
@@ -126,10 +126,9 @@ export default function Component() {
             showGridLines={true}
             showLegend={true}
           />
-          <Card className="justify-center w-[40dvh] gap-2">
-            <p>Copy and insert your UniBo username!</p>
-            <CodeSnippet  hostname={host.Hostname}></CodeSnippet>
-          </Card>
+        </div>
+        <div className="w-fit mx-auto">
+            <CodeSnippet hostname={host.Hostname}></CodeSnippet>
         </div>
       </Card>
       
